@@ -57,3 +57,59 @@
     principal
     uint
 )
+
+
+;; Data Variables
+(define-data-var proposal-count uint u0)
+(define-data-var dao-owner principal tx-sender)
+(define-data-var total-members uint u0)
+
+;; Read-only functions
+(define-read-only (get-proposal (proposal-id uint))
+    (map-get? proposals proposal-id)
+)
+
+(define-read-only (get-member-weight (member principal))
+    (default-to u0 (map-get? member-weights member))
+)
+
+(define-read-only (has-voted (proposal-id uint) (voter principal))
+    (is-some (map-get? votes {proposal-id: proposal-id, voter: voter}))
+)
+
+;; Data validation functions
+(define-private (is-valid-weight (weight uint))
+    (and 
+        (>= weight MIN_MEMBER_WEIGHT)
+        (<= weight MAX_MEMBER_WEIGHT)
+    )
+)
+
+(define-private (is-valid-title (title (string-ascii 50)))
+    (and
+        (not (is-eq title ""))
+        (<= (len title) u50)
+    )
+)
+
+(define-private (is-valid-description (description (string-ascii 500)))
+    (and
+        (not (is-eq description ""))
+        (<= (len description) u500)
+    )
+)
+
+(define-private (is-valid-amount (amount uint))
+    (and
+        (> amount u0)
+        (>= amount MIN_PROPOSAL_AMOUNT)
+    )
+)
+
+(define-private (is-valid-recipient (recipient principal))
+    (and
+        (not (is-eq recipient tx-sender))
+        (not (is-eq recipient (var-get dao-owner)))
+    )
+)
+
